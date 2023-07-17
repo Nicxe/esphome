@@ -4,6 +4,7 @@ This is my take on the [Weatherman Dashboard for ESPHome](https://github.com/Mad
 
 The dashboard is located at the front door of our apartment with the purpose to show us information that is of interest when we leave the apartment. Some information only shows when it is of interest, for example, a reminder to pack fruit to school for our son. 
 
+<img src="https://github.com/Nicxe/esphome/assets/27124316/c621d482-ebf8-45b7-a41b-03f42834f653" width="500">
 
 
 ## Hardware
@@ -19,5 +20,6 @@ The dashboard is located at the front door of our apartment with the purpose to 
 
 
 ## Images
-![IMG_1118](https://github.com/Nicxe/esphome/assets/27124316/4d62ed60-0f27-498e-87dc-88041a0f3400)
-All icons and information shows, this is only when the dashboard is in service mode
+<img src="https://github.com/Nicxe/esphome/assets/27124316/4d62ed60-0f27-498e-87dc-88041a0f3400" width="500">
+<br>All icons and information show, this is only when the dashboard is in service mode
+
