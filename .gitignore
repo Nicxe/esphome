@@ -4,3 +4,4 @@
 /.esphome/
 /secrets.yaml
 /esp32-bluetooth-proxy-2ea83c.yaml
+/.vscode/

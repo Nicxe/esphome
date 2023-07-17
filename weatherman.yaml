@@ -611,7 +611,7 @@ display:
 
       //# Print if any doors are open
         if (id(open_doors).state > 0 or id(service).state == "on") {
-                it.printf(163, 490, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F081C");
+                it.printf(160, 490, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F081C");
                 it.printf(257, 500, id(font_small_bold), TextAlign::TOP_CENTER, "BALKONGDÖRR");
             }
       
