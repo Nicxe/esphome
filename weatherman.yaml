@@ -1,0 +1,666 @@
+## My take of Weatherman dashboard from Madelena
+
+# WEATHERMAN DASHBOARD
+# For Home Assistant and ESPHome
+# Designed by Madelena Mak 2022 - https://mmak.es
+
+# Cue "Blame it on the Weatherman" by B*Witched!
+esphome:
+  name: "weatherman"
+  on_boot:
+      priority: 200.0
+      then:
+        - component.update: eink_display
+        - wait_until:
+            condition:
+              lambda: 'return id(data_updated) == true;'
+              # Wait a bit longer so all the items are received
+        - delay: 5s
+        - logger.log: "Initial sensor data received: Refreshing display..."
+        - lambda: 'id(initial_data_received) = true;'
+        - script.execute: update_screen
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+ota:
+
+# Enable sun integration
+sun:
+  latitude: 57.698644
+  longitude: 11.984769
+
+# Creates buttons in Home Assistant to
+button:
+  - platform: shutdown
+    name: "Weatherman - Shutdown"
+  - platform: restart
+    name: "Weatherman - Restart"
+  - platform: template
+    name: "Weatherman - Refresh Screen"
+    entity_category: config
+    on_press:
+      - script.execute: update_screen
+      
+      
+# Global variables for detecting if the display needs to be refreshed. (Thanks @paviro!)
+globals:
+  - id: data_updated
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: initial_data_received
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: recorded_display_refresh
+    type: int
+    restore_value: yes
+    initial_value: '0'
+
+
+# Script for updating screen - Refresh display and publish refresh count and time. (Thanks @paviro!)
+script:
+  - id: update_screen
+    then:
+      - lambda: 'id(data_updated) = false;'
+      - component.update: eink_display
+      - lambda: 'id(recorded_display_refresh) += 1;'
+      - lambda: 'id(display_last_update).publish_state(id(homeassistant_time).now().timestamp);'
+      
+
+# Check whether the display needs to be refreshed every minute,
+# based on whether new data is received or motion is detected. (Thanks @paviro!)
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time:
+      - seconds: 0
+        minutes: /1
+        then:
+          - if:
+              condition:
+                lambda: 'return id(data_updated) == true;'
+              then:
+                - if:
+                    condition:
+                      binary_sensor.is_on: motion_detected
+                    then:
+                      - logger.log: "Sensor data updated and activity in home detected: Refreshing display..."
+                      - script.execute: update_screen
+                    else:
+                      - logger.log: "Sensor data updated but no activity in home - skipping display refresh."
+              else:
+                - logger.log: "No sensors updated - skipping display refresh."
+
+
+# Wifi information
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
+
+
+# Include custom fonts
+font:
+  - file: 'fonts/GothamRnd-Book.ttf'
+    id: font_small_book
+    size: 18
+    glyphs: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', '-', ' ', '°', '.','m', '%']
+  - file: 'fonts/GothamRnd-Bold.ttf'
+    id: font_large_bold
+    size: 108
+    glyphs: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', '-', ' ', '°', '.']
+  - file: 'fonts/GothamRnd-Bold.ttf'
+    id: font_title
+    size: 54
+    glyphs: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', '-', ' ', '°', '.']
+  - file: 'fonts/GothamRnd-Bold.ttf'
+    id: font_medium_bold
+    size: 30
+    glyphs: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', '-', ' ', '°', '.']
+  - file: 'fonts/GothamRnd-Bold.ttf'
+    id: font_small_bold
+    size: 18
+    glyphs: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', '-', ' ', '°', '.']
+
+
+  # Include Material Design Icons font
+  # Thanks to https://community.home-assistant.io/t/display-materialdesign-icons-on-esphome-attached-to-screen/199790/16
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: font_mdi_large
+    size: 96
+    glyphs: &mdi-weather-glyphs
+      - "\U000F0590" # mdi-weather-cloudy
+      - "\U000F0F2F" # mdi-weather-cloudy-alert
+      - "\U000F0E6E" # mdi-weather-cloudy-arrow-right
+      - "\U000F0591" # mdi-weather-fog
+      - "\U000F0592" # mdi-weather-hail
+      - "\U000F0F30" # mdi-weather-hazy
+      - "\U000F0898" # mdi-weather-hurricane
+      - "\U000F0593" # mdi-weather-lightning
+      - "\U000F067E" # mdi-weather-lightning-rainy
+      - "\U000F0594" # mdi-weather-night
+      - "\U000F0F31" # mdi-weather-night-partly-cloudy
+      - "\U000F0595" # mdi-weather-partly-cloudy
+      - "\U000F0F32" # mdi-weather-partly-lightning
+      - "\U000F0F33" # mdi-weather-partly-rainy
+      - "\U000F0F34" # mdi-weather-partly-snowy
+      - "\U000F0F35" # mdi-weather-partly-snowy-rainy
+      - "\U000F0596" # mdi-weather-pouring
+      - "\U000F0597" # mdi-weather-rainy
+      - "\U000F0598" # mdi-weather-snowy
+      - "\U000F0F36" # mdi-weather-snowy-heavy
+      - "\U000F067F" # mdi-weather-snowy-rainy
+      - "\U000F0599" # mdi-weather-sunny
+      - "\U000F0F37" # mdi-weather-sunny-alert
+      - "\U000F14E4" # mdi-weather-sunny-off
+      - "\U000F059A" # mdi-weather-sunset
+      - "\U000F059B" # mdi-weather-sunset-down
+      - "\U000F059C" # mdi-weather-sunset-up
+      - "\U000F0F38" # mdi-weather-tornado
+      - "\U000F059D" # mdi-weather-windy
+      - "\U000F059E" # mdi-weather-windy-variant
+      - "\U000F081C" # mdi-door-open
+      - "\U000F1A71" # mdi-snowflake-thermometer
+      - "\U000F05A9" # mdi-wifi
+      - "\U000F0928" # mdi-wifi-strength-4
+      - "\U000F0925" # mdi-wifi-strength-3 
+      - "\U000F0922" # mdi-wifi-strength-2
+      - "\U000F091F" # mdi-wifi-strength-1
+      - "\U000F092B" # mdi-wifi-strength-alert-outline
+      - "\U000F05D6" # mdi alert-circle-outline
+      - "\U000F0C84" # mdi food-apple-outline
+      - "\U000F1A41" # mdi gymnastics
+      - "\U000F15D6" # mdi book-open-page-variant-outline
+      - "\U000F054B" # mdi umbrella-outline
+      - "\U000F0F29" # mdi snowflake-alert
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: font_mdi_medlarge
+    size: 18
+    glyphs:
+      - "\U000F05A9" # mdi-wifi
+      - "\U000F0928" # mdi-wifi-strength-4
+      - "\U000F0925" # mdi-wifi-strength-3 
+      - "\U000F0922" # mdi-wifi-strength-2
+      - "\U000F091F" # mdi-wifi-strength-1
+      - "\U000F092B" # mdi-wifi-strength-alert-outline
+      - "\U000F054B" # mdi umbrella-outline
+      - "\U000F0F29" # mdi snowflake-alert
+      - "\U000F0535" # mdi trending-up
+      - "\U000F0533" # mdi trending-down 
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: font_mdi_medium
+    size: 36
+    glyphs: *mdi-weather-glyphs
+
+
+# Check if motion is detected in the living room.
+binary_sensor:
+  - platform: homeassistant
+    entity_id: binary_sensor.weatherman_motion_detected
+    id: motion_detected
+
+sensor:
+  # Create sensors for monitoring Weatherman remotely.
+  - platform: template
+    name: "Weatherman - Display Last Update"
+    device_class: timestamp
+    entity_category: "diagnostic"
+    id: display_last_update
+    
+  - platform: template
+    name: "Weatherman - Recorded Display Refresh"
+    accuracy_decimals: 0
+    unit_of_measurement: "Refreshes"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+    lambda: 'return id(recorded_display_refresh);'
+  
+  - platform: wifi_signal
+    name: "Weatherman - WiFi Signal Strength"
+    id: wifisignal
+    unit_of_measurement: "dBm"
+    entity_category: "diagnostic"
+    update_interval: 60s
+
+# Call Weather sensors from HA.
+
+  - platform: homeassistant
+    entity_id: weather.forecast_home_hourly
+    attribute: temperature
+    id: weather_temperature
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+# Call temperature from HA - Aquara sensor outside
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: temperature_home_now_aqara
+    id: weather_temperature_aquara
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+# Call temperature from HA - Feels like temperture
+# https://github.com/Limych/ha-temperature-feels-like
+
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: temperature_home_feels_like
+    id: weather_temperature_feels_like
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call weaather forcast from HA
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_temperature_0
+    id: weather_temperature_0
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_temperature_1
+    id: weather_temperature_1
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_temperature_2
+    id: weather_temperature_2
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_temperature_3
+    id: weather_temperature_3
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_precipitation_0
+    id: weather_precipitation_0
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_precipitation_1
+    id: weather_precipitation_1
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_precipitation_2
+    id: weather_precipitation_2
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_precipitation_3
+    id: weather_precipitation_3
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Precipication probability today
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: precipitation_probability
+    id: precipitation_probability
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Any open doors
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: open_doors
+    id: open_doors
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## WiFi signl from ESP32 service
+  - platform: wifi_signal
+    name: "WiFi Signal Sensor"
+    update_interval: 60s
+ 
+
+text_sensor:
+## Call weaather conditon from HA  
+  - platform: homeassistant
+    entity_id: weather.hourly
+    id: weather_state
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: service
+    id: service
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_condition_now
+    id: weather_condition_now
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_condition_0
+    id: weather_condition_0
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_timestamp_0
+    id: weather_timestamp_0
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_condition_1
+    id: weather_condition_1
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_timestamp_1
+    id: weather_timestamp_1
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_condition_2
+    id: weather_condition_2
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_timestamp_2
+    id: weather_timestamp_2
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_condition_3
+    id: weather_condition_3
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: weather_timestamp_3
+    id: weather_timestamp_3
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call weaather conditon from HA  - Trends in temperature
+## https://www.home-assistant.io/integrations/trend/
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: temp_trend
+    id: temp_trend
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Frost risk
+# https://github.com/dolezsa/thermal_comfort
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: frost_risk
+    id: frost_risk
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Is there gymnastic in scool today?
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: gympa
+    id: gympa
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Do we need to pack fruit to school today?
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: frukt
+    id: frukt
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Call sensor from HA - Do we need to pack any homework today?
+  - platform: homeassistant
+    entity_id: sensor.weatherman_data
+    attribute: laxa
+    id: laxa
+    on_value:
+      then:
+        - lambda: 'id(data_updated) = true;'
+
+## Sunrise
+  - platform: sun
+    type: sunrise
+    id: sun_sunrise
+    format: "%H:%M"
+## Sunset
+  - platform: sun
+    type: sunset
+    id: sun_sunset
+    format: "%H:%M"
+
+
+# Pins for Waveshare ePaper ESP Board
+spi:
+  clk_pin: GPIO13
+  mosi_pin: GPIO14
+
+
+# Now render everything on the ePaper screen.
+display:
+  - platform: waveshare_epaper
+    id: eink_display
+    cs_pin: GPIO15
+    dc_pin: GPIO27
+    busy_pin: GPIO25
+    reset_pin: GPIO26
+    reset_duration: 2ms
+    model: 7.50inV2
+    update_interval: never
+    rotation: 90°
+    lambda: |-
+      // Map weather states to MDI characters.
+      std::map<std::string, std::string> weather_icon_map
+        {
+          {"cloudy", "\U000F0590"},
+          {"cloudy-alert", "\U000F0F2F"},
+          {"cloudy-arrow-right", "\U000F0E6E"},
+          {"fog", "\U000F0591"},
+          {"hail", "\U000F0592"},
+          {"hazy", "\U000F0F30"},
+          {"hurricane", "\U000F0898"},
+          {"lightning", "\U000F0593"},
+          {"lightning-rainy", "\U000F067E"},
+          {"night", "\U000F0594"},
+          {"night-partly-cloudy", "\U000F0F31"},
+          {"partlycloudy", "\U000F0595"},
+          {"partly-lightning", "\U000F0F32"},
+          {"partly-rainy", "\U000F0F33"},
+          {"partly-snowy", "\U000F0F34"},
+          {"partly-snowy-rainy", "\U000F0F35"},
+          {"pouring", "\U000F0596"},
+          {"rainy", "\U000F0597"},
+          {"snowy", "\U000F0598"},
+          {"snowy-heavy", "\U000F0F36"},
+          {"snowy-rainy", "\U000F067F"},
+          {"sunny", "\U000F0599"},
+          {"sunny-alert", "\U000F0F37"},
+          {"sunny-off", "\U000F14E4"},
+          {"sunset", "\U000F059A"},
+          {"sunset-down", "\U000F059B"},
+          {"sunset-up", "\U000F059C"},
+          {"tornado", "\U000F0F38"},
+          {"windy", "\U000F059D"},
+          {"windy-variant", "\U000F059E"},
+        };
+
+
+      //# Print loading screen before data is received.
+      if (id(initial_data_received) == false) {
+        it.printf(240, 390, id(font_small_bold), TextAlign::TOP_CENTER, "VÄNTAR PÅ DATA");
+      } else {
+
+      //# Print Weather Section
+        it.printf(240, 84, id(font_title), TextAlign::TOP_CENTER, "GÖTEBORG");
+        
+        it.printf(100, 158, id(font_mdi_large), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_now).state.c_str()].c_str());
+        it.printf(300, 158, id(font_large_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_aquara).state);
+    
+      //#  Print precipitation probability
+        if (id(precipitation_probability).state > 50 or id(service).state == "on") {
+          it.printf(80, 265, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F054B");
+          it.printf(100, 265, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f", id(precipitation_probability).state);
+          it.printf(120, 265, id(font_small_book), TextAlign::TOP_CENTER, "%s", "%");
+        }
+      //# Print feels like temperature
+        it.printf(230, 265, id(font_small_bold), TextAlign::TOP_CENTER, "KÄNNS SOM");
+        it.printf(314, 265, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_feels_like).state);
+
+      //# Print of temperature is trending
+        if (id(temp_trend).state == "warm" or id(service).state == "on") {
+            it.printf(350, 265, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F0535");
+        }
+        if (id(temp_trend).state == "cold") {
+            it.printf(350, 265, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F0533");  
+        }
+
+      //# Print risk for frost icon
+        if (id(frost_risk).state == "probable" or id(frost_risk).state == "high" or id(service).state == "on") {
+            it.printf(385, 255, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F0F29");
+        }
+
+      //# Print weather forcast
+        it.printf(105, 300, id(font_small_book), TextAlign::TOP_CENTER, "%s", id(weather_timestamp_0).state.c_str());
+        it.printf(105, 324, id(font_mdi_medium), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_0).state.c_str()].c_str());
+        it.printf(105, 372, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_0).state);
+        if (id(weather_precipitation_0).state > 0 or id(service).state == "on") {
+            it.printf(102, 400, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f mm", id(weather_precipitation_0).state);
+        }
+        it.printf(195, 300, id(font_small_book), TextAlign::TOP_CENTER, "%s", id(weather_timestamp_1).state.c_str());
+        it.printf(195, 324, id(font_mdi_medium), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_1).state.c_str()].c_str());
+        it.printf(195, 372, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_1).state);
+        if (id(weather_precipitation_1).state > 0 or id(service).state == "on") {
+            it.printf(192, 400, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f mm", id(weather_precipitation_1).state);
+        }
+        it.printf(285, 300, id(font_small_book), TextAlign::TOP_CENTER, "%s", id(weather_timestamp_2).state.c_str());
+        it.printf(285, 324, id(font_mdi_medium), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_2).state.c_str()].c_str());
+        it.printf(285, 372, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_2).state);
+        if (id(weather_precipitation_2).state > 0 or id(service).state == "on") {
+              it.printf(282, 400, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f mm", id(weather_precipitation_2).state);
+          }
+        it.printf(375, 300, id(font_small_book), TextAlign::TOP_CENTER, "%s", id(weather_timestamp_3).state.c_str());
+        it.printf(375, 324, id(font_mdi_medium), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_3).state.c_str()].c_str());
+        it.printf(375, 372, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_3).state);
+        if (id(weather_precipitation_3).state > 0 or id(service).state == "on") {
+              it.printf(372, 400, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f mm", id(weather_precipitation_3).state);
+          }
+
+      //# Print sunrise and sunset
+        
+        it.printf(150, 430, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F059C");
+        it.printf(200, 435, id(font_small_bold), TextAlign::TOP_CENTER, "%s", id(sun_sunrise).state.c_str());
+
+        it.printf(265, 430, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F059B");
+        it.printf(315, 435, id(font_small_bold), TextAlign::TOP_CENTER, "%s", id(sun_sunset).state.c_str());
+
+      //# Print if any doors are open
+        if (id(open_doors).state > 0 or id(service).state == "on") {
+                it.printf(163, 490, id(font_mdi_medium), TextAlign::TOP_CENTER, "\U000F081C");
+                it.printf(257, 500, id(font_small_bold), TextAlign::TOP_CENTER, "BALKONGDÖRR");
+            }
+      
+      //# Print Gymnastics
+
+        if (id(gympa).state == "on" or id(service).state == "on") {
+                it.printf(120, 550, id(font_mdi_large), TextAlign::TOP_CENTER, "\U000F1A41");
+                it.printf(120, 655, id(font_small_bold), TextAlign::TOP_CENTER, "GYMPA");
+            }
+
+      // # Fruit
+        if (id(frukt).state == "on" or id(service).state == "on") {
+                it.printf(250, 550, id(font_mdi_large), TextAlign::TOP_CENTER, "\U000F0C84");
+                it.printf(250, 655, id(font_small_bold), TextAlign::TOP_CENTER, "FRUKT");
+            }
+
+      //# Print homework
+        if (id(laxa).state == "on" or id(service).state == "on") {
+               it.printf(380, 550, id(font_mdi_large), TextAlign::TOP_CENTER, "\U000F15D6");
+               it.printf(380, 655, id(font_small_bold), TextAlign::TOP_CENTER, "LÄXA");
+            }
+
+      //# Print WiFi-signal
+      if(id(wifisignal).has_state ()) {
+        if (id(wifisignal).state >= -50) {
+            // Excellent
+            it.printf(135, 710, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F0928");
+        } else if (id(wifisignal).state  >= -60) {
+            //Good
+            it.printf(135, 710, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F0925");
+        } else if (id(wifisignal).state  >= -67) {
+            //Fair
+            it.printf(135, 710, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F0922");
+        } else if (id(wifisignal).state  >= -70) {
+            //Weak
+            it.printf(135, 710, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F091F");
+        } else {
+            //Unlikely working signal
+            it.printf(135, 710, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F092B");
+        }
+      }
+
+      //# Print update timestamp
+        // Refresh Timestamp
+        // Code by EnsconcE from https://community.home-assistant.io/t/esphome-show-time/348903
+        char str[17];
+        time_t currTime = id(homeassistant_time).now().timestamp;
+        strftime(str, sizeof(str), "%H:%M", localtime(&currTime));
+        it.printf(255, 710, id(font_small_book), TextAlign::TOP_CENTER, "UPPDATERAD KL %s", str);
+      }
+
+captive_portal:
