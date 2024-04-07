@@ -242,7 +242,7 @@ sensor:
 # Call Weather sensors from HA.
 
   - platform: homeassistant
-    entity_id: sensor.weather_hourly
+    entity_id: weather.smhi_home
     attribute: temperature
     id: weather_temperature
     on_value:
