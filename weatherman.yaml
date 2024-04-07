@@ -1,7 +1,7 @@
 ## My take of Weatherman dashboard from Madelena
 
 # WEATHERMAN DASHBOARD
-# For Home Assistant and ESPHome
+#  For Home Assistant and ESPHome
 # Designed by Madelena Mak 2022 - https://mmak.es
 
 # Cue "Blame it on the Weatherman" by B*Witched!
@@ -213,7 +213,10 @@ binary_sensor:
     entity_id: binary_sensor.weatherman_motion_detected
     id: motion_detected
 
+
 sensor:
+
+
   # Create sensors for monitoring Weatherman remotely.
   - platform: template
     name: "Weatherman - Display Last Update"
@@ -239,7 +242,7 @@ sensor:
 # Call Weather sensors from HA.
 
   - platform: homeassistant
-    entity_id: weather.forecast_home_hourly
+    entity_id: sensor.weather_hourly
     attribute: temperature
     id: weather_temperature
     on_value:
@@ -325,13 +328,13 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
 ## Call sensor from HA - Precipication probability today
-  - platform: homeassistant
-    entity_id: sensor.weatherman_data
-    attribute: precipitation_probability
-    id: precipitation_probability
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
+#  - platform: homeassistant
+#    entity_id: sensor.weatherman_data
+#    attribute: precipitation_probability
+#    id: precipitation_probability
+#    on_value:
+#      then:
+#        - lambda: 'id(data_updated) = true;'
 
 ## Call sensor from HA - Any open doors
   - platform: homeassistant
@@ -552,12 +555,6 @@ display:
         it.printf(100, 158, id(font_mdi_large), TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_now).state.c_str()].c_str());
         it.printf(300, 158, id(font_large_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_aquara).state);
     
-      //#  Print precipitation probability
-        if (id(precipitation_probability).state > 50 or id(service).state == "on") {
-          it.printf(80, 265, id(font_mdi_medlarge), TextAlign::TOP_CENTER, "\U000F054B");
-          it.printf(100, 265, id(font_small_book), TextAlign::TOP_CENTER, "%2.0f", id(precipitation_probability).state);
-          it.printf(120, 265, id(font_small_book), TextAlign::TOP_CENTER, "%s", "%");
-        }
       //# Print feels like temperature
         it.printf(230, 265, id(font_small_bold), TextAlign::TOP_CENTER, "KÄNNS SOM");
         it.printf(314, 265, id(font_small_bold), TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_feels_like).state);
@@ -633,7 +630,7 @@ display:
                it.printf(380, 550, id(font_mdi_large), TextAlign::TOP_CENTER, "\U000F15D6");
                it.printf(380, 655, id(font_small_bold), TextAlign::TOP_CENTER, "LÄXA");
             }
-
+            
       //# Print WiFi-signal
       if(id(wifisignal).has_state ()) {
         if (id(wifisignal).state >= -50) {
