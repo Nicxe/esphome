@@ -1,0 +1,140 @@
+
+
+### This sensors should be placed in you configuration.yaml file
+
+# I am using packages in my setup, https://www.home-assistant.io/docs/configuration/packages/
+# This file is placed in my packages folder
+
+
+
+template:
+  # Update screen only when occupancy is detected.
+
+  - binary_sensor:
+      - name: Weatherman Motion Detected
+        unique_id: "dfa78de7-d761-425f-9731-86f1af332eac"
+        device_class: "occupancy"
+        delay_off: "00:01:00"
+        state: >-
+          {%- if states('binary_sensor.hall_pir_occupancy') == 'on' %}
+            on
+          {%- else -%}
+            off
+          {%- endif -%}
+
+  # Bundle up all the data to send over to Weatherman (ESPHome device).
+  - trigger:
+      platform: time_pattern
+      minutes: "/1"
+    action:
+      - service: weather.get_forecasts
+        data:
+          type: hourly
+        target:
+          entity_id: weather.smhi_home
+        response_variable: hourly
+    sensor:
+      - name: Weatherman Data
+        state: "OK"
+        attributes:
+          temperature_home_now_aqara: >
+            {{ states('sensor.outside_filtered_realistic_temperature') }}
+          temperature_home_feels_like: >
+            {{ states('sensor.smhi_home_temperature_feels_like') | round }}
+          weather_condition_now: >
+            {% set cond_now = states('weather.smhi_home') %}
+            {% if states('sun.sun') == 'below_horizon' %}
+                {% if cond_now == 'sunny' %} night {% elif cond_now == 'partlycloudy' %} night-partly-cloudy {% else %} {{ cond_now }} {% endif %}
+            {% else %}
+                {{ cond_now }}
+            {% endif %}
+          weather_condition_0: >
+            {% set cond0 = hourly["weather.smhi_home"].forecast[0].condition %}
+            {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
+            {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
+            {% set cond0_time = as_timestamp(hourly["weather.smhi_home"].forecast[0].datetime) %}
+            {% if cond0_time < next_rising and next_rising < next_setting %}
+                {% if cond0 == 'sunny' %} night {% elif cond0 == 'partlycloudy' %} night-partly-cloudy {% else %} {{ cond0 }} {% endif %}
+            {% else %}
+                {{ cond0 }}
+            {% endif %}
+          weather_temperature_0: >
+            {{  hourly["weather.smhi_home"].forecast[0].temperature | round }}
+          weather_precipitation_0: >
+            {{  hourly["weather.smhi_home"].forecast[0].precipitation }}
+          weather_timestamp_0: >
+            {{ as_timestamp(hourly["weather.smhi_home"].forecast[0].datetime) | timestamp_custom("%H:%M")}}
+          weather_condition_1: >
+            {% set cond1 = hourly["weather.smhi_home"].forecast[3].condition %}
+            {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
+            {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
+            {% set cond1_time = as_timestamp(hourly["weather.smhi_home"].forecast[3].datetime) %}
+            {% if cond1_time < next_rising and next_rising < next_setting %}
+                {% if cond1 == 'sunny' %} night {% elif cond1 == 'partlycloudy' %} night-partly-cloudy {% else %} {{ cond1 }} {% endif %}
+            {% else %}
+                {{ cond1 }}
+            {% endif %}
+          weather_temperature_1: >
+            {{ hourly["weather.smhi_home"].forecast[3].temperature | round }}
+          weather_precipitation_1: >
+            {{ hourly["weather.smhi_home"].forecast[3].precipitation }}
+          weather_timestamp_1: >
+            {{ as_timestamp(hourly["weather.smhi_home"].forecast[3].datetime) | timestamp_custom("%H:%M")}}
+          weather_condition_2: >
+            {% set cond2 = hourly["weather.smhi_home"].forecast[6].condition %}
+            {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
+            {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
+            {% set cond2_time = as_timestamp(hourly["weather.smhi_home"].forecast[6].datetime) %}
+            {% if cond2_time < next_rising and next_rising < next_setting %}
+                {% if cond2 == 'sunny' %} night {% elif cond2 == 'partlycloudy' %} night-partly-cloudy {% else %} {{ cond2 }} {% endif %}
+            {% else %}
+                {{ cond2 }}
+            {% endif %}
+          weather_temperature_2: >
+            {{ hourly["weather.smhi_home"].forecast[6].temperature | round }}
+          weather_precipitation_2: >
+            {{ hourly["weather.smhi_home"].forecast[6].precipitation }}
+          weather_timestamp_2: >
+            {{ as_timestamp(hourly["weather.smhi_home"].forecast[6].datetime) | timestamp_custom("%H:%M")}}
+          weather_condition_3: >
+            {% set cond3 = hourly["weather.smhi_home"].forecast[9].condition %}
+            {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
+            {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
+            {% set cond3_time = as_timestamp(hourly["weather.smhi_home"].forecast[9].datetime) %}
+            {% if cond3_time < next_rising and next_rising < next_setting %}
+                {% if cond3 == 'sunny' %} night {% elif cond3 == 'partlycloudy' %} night-partly-cloudy {% else %} {{ cond3 }} {% endif %}
+            {% else %}
+                {{ cond3 }}
+            {% endif %}
+          weather_temperature_3: >
+            {{ hourly["weather.smhi_home"].forecast[9].temperature | round }}
+          weather_precipitation_3: >
+            {{ hourly["weather.smhi_home"].forecast[9].precipitation }}
+          weather_timestamp_3: >
+            {{ as_timestamp(hourly["weather.smhi_home"].forecast[9].datetime) | timestamp_custom("%H:%M")}}
+          open_doors: >
+            {% set doors = [
+              states.binary_sensor.balkongdorren,
+              states.binary_sensor.franska_balkongdorren
+            ] %}
+            {% set doors_on = doors | selectattr('state','eq','on') | list | count  %}
+            {{ doors_on }}
+          frost_risk: >
+            {{ states('sensor.thermal_comfort_frost_risk') }}
+          gympa: >
+            {{ states('calendar.gympa_local') }}
+          frukt: >
+            {{ states('calendar.frukt_local') }}
+          laxa: >
+            {{ states('calendar.laxa_local') }}
+          service: >
+            {{ states('input_boolean.e_ink_service') }}
+          temp_trend: >
+            {% set temp_rising = states('binary_sensor.temp_rising') %}
+            {% set temp_falling = states('binary_sensor.temp_falling') %}
+            {% if (temp_rising) == 'on' or (temp_falling) == 'on' %}
+              {% if (temp_rising) == 'on' %}warm{%- endif %}
+              {% if (temp_falling) == 'on' %}cold{%- endif %}
+            {% else %}
+            off
+            {% endif %}
