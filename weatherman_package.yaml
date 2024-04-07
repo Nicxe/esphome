@@ -1,6 +1,6 @@
 
 
-### This sensors should be placed in you configuration.yaml file
+### This sensors should be placed in you Home Assistant configuration.yaml file
 
 # I am using packages in my setup, https://www.home-assistant.io/docs/configuration/packages/
 # This file is placed in my packages folder
