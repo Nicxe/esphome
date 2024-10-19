@@ -2,6 +2,11 @@
 
 <a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
+<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2024"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/esphome"><br><br>
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Nicxe/esphome">
+
+
+
 This is my take on the [Weatherman Dashboard for ESPHome](https://github.com/Madelena/esphome-weatherman-dashboard).
 
 The dashboard is located at the front door of our apartment with the purpose to show us information that is of interest when we leave the apartment. Some information only shows when it is of interest, for example, a reminder to pack fruit to school for our son. 
