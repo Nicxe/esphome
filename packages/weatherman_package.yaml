@@ -144,72 +144,76 @@ sensor:
             0
           {% else %}
             {% set no_rain = true %}
+            {% set time_until_rain = 0 %}
             {% for day in forecast if 'condition' in day and 'datetime' in day %}
               {% if day.condition == 'rainy' %}
-                {% set rain_datetime = as_datetime(day.datetime) if day.datetime is not none else none %}
+                {% set rain_datetime = as_datetime(day.datetime) %}
                 {% if rain_datetime > now %}
-                  {% if rain_datetime > now %}{% set time_delta = (rain_datetime - now).total_seconds() %}{% else %}{% set time_delta = 0 %}{% endif %}
+                  {% set time_delta = (rain_datetime - now).total_seconds() %}
                   {% set hours = (time_delta // 3600) | int %}
                   {% set minutes = ((time_delta % 3600) // 60) | int %}
                   {% if hours <= 12 %}
                     {% set no_rain = false %}
-                    {% if hours < 1 %}
-                      Regn om {{ minutes }} minuter klockan {{ rain_datetime.strftime('%H:%M') }}
-                    {% else %}
-                      {{ rain_datetime.strftime('%H:%M') }}
-                    {% endif %}
+                    {% set time_until_rain = minutes if hours == 0 else (hours * 60 + minutes) %}
+                    {% break %}
                   {% endif %}
-                  {% break %}
                 {% endif %}
               {% endif %}
             {% endfor %}
             {% if no_rain %}
               0
+            {% else %}
+              {{ time_until_rain }}
             {% endif %}
           {% endif %}
         unit_of_measurement: "min"
         attribute_templates:
           timmar: >-
             {% set forecast = state_attr('sensor.weather_forecast_daily_hourly', 'forecast') %}
+            {% set time_until = none %}
             {% for day in forecast %}
               {% if day.condition == 'rainy' %}
                 {% set rain_datetime = as_datetime(day.datetime) %}
                 {% set now = now() %}
                 {% if rain_datetime > now %}
                   {% set time_delta = (rain_datetime - now).total_seconds() %}
-                  {% set hours = (time_delta // 3600) | int %}
-                  {{ hours }}
+                  {% set time_until = (time_delta // 3600) | int %}
                   {% break %}
                 {% endif %}
               {% endif %}
             {% endfor %}
+            {{ time_until if time_until is not none else 0 }}
           klockslag: >-
             {% set forecast = state_attr('sensor.weather_forecast_daily_hourly', 'forecast') %}
+            {% set rain_time = none %}
             {% for day in forecast %}
               {% if day.condition == 'rainy' %}
                 {% set rain_datetime = as_datetime(day.datetime) %}
                 {% set now = now() %}
                 {% if rain_datetime > now %}
-                  {{ rain_datetime.strftime('%H:%M') }}
+                  {% set rain_time = rain_datetime.strftime('%H:%M') %}
                   {% break %}
                 {% endif %}
               {% endif %}
             {% endfor %}
+            {{ rain_time if rain_time is not none else 'Ingen tid' }}
           mängd_regn: >-
             {% set forecast = state_attr('sensor.weather_forecast_daily_hourly', 'forecast') %}
+            {% set rain_amount = 0 %}
             {% for day in forecast %}
               {% if day.condition == 'rainy' %}
                 {% set rain_datetime = as_datetime(day.datetime) %}
                 {% set now = now() %}
                 {% if rain_datetime > now %}
-                  {{ day.precipitation }}
+                  {% set rain_amount = day.precipitation %}
                   {% break %}
                 {% endif %}
               {% endif %}
             {% endfor %}
+            {{ rain_amount if rain_amount is not none else 0 }}
           condition: >-
             {% set forecast = state_attr('sensor.weather_forecast_daily_hourly', 'forecast') %}
-            {% if forecast[0].condition == 'rainy' and as_datetime(forecast[0].datetime) <= now() %}
+            {% if forecast and forecast[0].condition == 'rainy' and as_datetime(forecast[0].datetime) <= now() %}
               regnar
             {% else %}
               inget regn
@@ -217,7 +221,7 @@ sensor:
           regn_info: >-
             {% set forecast = state_attr('sensor.weather_forecast_daily_hourly', 'forecast') %}
             {% set now = now() %}
-            {% set no_rain = true %}
+            {% set rain_info = 'Inget regn' %}
             {% for day in forecast if 'condition' in day and 'datetime' in day and 'precipitation' in day %}
               {% if day.condition == 'rainy' %}
                 {% set rain_datetime = as_datetime(day.datetime) %}
@@ -226,16 +230,12 @@ sensor:
                   {% set hours = (time_delta // 3600) | int %}
                   {% set minutes = ((time_delta % 3600) // 60) | int %}
                   {% if hours < 1 %}
-                    Regn om {{ minutes }} minuter klockan {{ rain_datetime.strftime('%H:%M') }} ({{ day.precipitation }} mm)
+                    {% set rain_info = 'Regn om ' ~ minutes ~ ' minuter klockan ' ~ rain_datetime.strftime('%H:%M') ~ ' (' ~ day.precipitation ~ ' mm)' %}
                   {% elif hours <= 12 %}
-                    Regn kl {{ rain_datetime.strftime('%H:%M') }} ({{ day.precipitation }} mm)
-                  {% else %}
-                    {% set no_rain = true %}
+                    {% set rain_info = 'Regn kl ' ~ rain_datetime.strftime('%H:%M') ~ ' (' ~ day.precipitation ~ ' mm)' %}
                   {% endif %}
                   {% break %}
                 {% endif %}
               {% endif %}
             {% endfor %}
-            {% if no_rain %}
-              Inget regn
-            {% endif %}
+            {{ rain_info }}
