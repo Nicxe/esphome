@@ -2,7 +2,7 @@
 
 <a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
-<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2024"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/esphome"><br><br>
+<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2025"> <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Nicxe/esphome"><br><br>
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Nicxe/esphome">
 
 
