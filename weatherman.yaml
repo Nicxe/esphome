@@ -267,7 +267,7 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
 # Call temperature from HA - Feels like temperture
-# https://github.com/Limych/ha-temperature-feels-like
+# hhttps://github.com/Nicxe/felt_temperature
 
   - platform: homeassistant
     entity_id: sensor.weatherman_data
@@ -334,15 +334,6 @@ sensor:
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
-
-## Call sensor from HA - Precipication probability today
-#  - platform: homeassistant
-#    entity_id: sensor.weatherman_data
-#    attribute: precipitation_probability
-#    id: precipitation_probability
-#    on_value:
-#      then:
-#        - lambda: 'id(data_updated) = true;'
 
 ## Call sensor from HA - Any open doors
   - platform: homeassistant
