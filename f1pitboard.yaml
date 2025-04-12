@@ -171,16 +171,11 @@ binary_sensor:
 # Include Images
 
 image:
-  - file: "images/f1_test.png"
+  - file: "images/f1.png"
     id: image_f1
     type: RGB565
     transparency: alpha_channel
     
-  - file: "images/f1_logo.png"
-    id: f1_logo
-    type: RGB565
-    transparency: alpha_channel
-
 
 sensor:
   - platform: template
