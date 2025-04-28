@@ -7,7 +7,6 @@ esphome:
         - wait_until:
             condition:
               lambda: 'return id(data_updated) == true;'
-              # Wait a bit longer so all the items are received
         - delay: 5s
         - logger.log: "Initial sensor data received: Refreshing display..."
         - lambda: 'id(initial_data_received) = true;'
@@ -17,13 +16,6 @@ esp32:
   board: esp32dev
   framework:
     type: arduino
-
-#external_components:
-#  - source:
-#      type: git
-#      url: https://github.com/prapador/esphome_waveshare_fix
-#      ref: dev
-#    components: [ waveshare_epaper ]
 
 # Enable logging
 logger:
@@ -329,10 +321,12 @@ display:
     id: eink_display
     cs_pin: GPIO15
     dc_pin: GPIO27
-    busy_pin: GPIO25
+    busy_pin:
+      number: GPIO25
+      inverted: true 
     reset_pin: GPIO26
     reset_duration: 2ms
-    model: 7.50inV2
+    model: 7.50inV2alt
     update_interval: never
     rotation: 90°
     lambda: |-
