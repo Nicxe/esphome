@@ -1,6 +1,6 @@
 # E-ink displays power by ESPhome and Home Assistant
 
-<a href="https://buymeacoffee.com/niklasv" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+[![GitHub Sponsors](https://img.shields.io/badge/Support-GitHub%20Sponsors-30363d?logo=github)](https://github.com/sponsors/Nicxe) [![Buy Me a Coffee](https://img.shields.io/badge/Alternative-Buy%20Me%20a%20Coffee-fdd734?logo=buy-me-a-coffee)](https://buymeacoffee.com/niklasv)
 
 
 
